@@ -190,8 +190,6 @@ st.markdown(
 
 st.caption(
     "This screen demonstrates the CALCULATION only, it is not the production UI. "
-    "The dev team's job is to combine this calculation engine with the Rozvi "
-    "risk-scoring model, inside the real Rozvi platform shown in the Figma file."
 )
 
 
