@@ -1,4 +1,3 @@
- 
 """
 simulation.py
 
@@ -110,14 +109,30 @@ def _fit_beta_distribution(mean: float, std_dev: float) -> tuple[float, float]:
     alpha/beta, which scipy rejects outright. We treat that case the same
     way as the "certain outcome" edge cases above, since a mean that
     close to 0 or 1 leaves essentially no room for real spread anyway.
+
+    A further wrinkle: scipy requires BOTH alpha and beta to be strictly
+    positive, not just non-negative. A mean of exactly 0 or exactly 1
+    (which genuinely occurs in this data -- e.g. 0% damage at 0m depth,
+    or 100% damage at the deepest floods for some asset classes) would
+    otherwise make one of the two shape parameters exactly 0.0, which
+    scipy rejects with the same error. The damage curve data also has one
+    row (Transport at 5m depth) where the mean is a fraction of a percent
+    over 1.0 -- a data quirk, not a real >100% damage figure -- which
+    would make beta go negative. We guard against all of these the same
+    way: clip the mean into a narrow-but-open (0, 1) interval before
+    computing alpha/beta in the "certain outcome" branch, so the
+    resulting distribution is still (for all practical purposes) a fixed
+    point at the intended mean, just never at the literal boundary.
     """
     if std_dev <= 0 or mean <= 0 or mean >= 1 or std_dev ** 2 >= mean * (1 - mean):
         # A very large alpha+beta with the right ratio squeezes the Beta
         # distribution down to (almost) a single point at `mean`, without
         # the numerical problems of a literal zero-variance distribution.
+        epsilon = 1e-6
+        clipped_mean = min(max(mean, epsilon), 1 - epsilon)
         concentration = 1_000_000
-        alpha = mean * concentration
-        beta_param = (1 - mean) * concentration
+        alpha = clipped_mean * concentration
+        beta_param = (1 - clipped_mean) * concentration
         return alpha, beta_param
 
     variance = std_dev ** 2
