@@ -98,8 +98,19 @@ def _fit_beta_distribution(mean: float, std_dev: float) -> tuple[float, float]:
     outcome is certain. In that case we return parameters that make the
     distribution behave as a fixed point at that mean, rather than letting
     the formula divide by zero.
+
+    A Beta distribution with a given mean can only support variances up
+    to mean * (1 - mean) (its variance approaches that ceiling as the
+    distribution becomes U-shaped/degenerate). Some rows in the damage
+    curve data report a standard deviation that -- combined with a mean
+    very close to 0 or 1 -- exceeds that ceiling (e.g. a mean of 0.995
+    with a std of 0.156). That combination isn't a valid Beta shape at
+    all: the method-of-moments formula below would produce a negative
+    alpha/beta, which scipy rejects outright. We treat that case the same
+    way as the "certain outcome" edge cases above, since a mean that
+    close to 0 or 1 leaves essentially no room for real spread anyway.
     """
-    if std_dev <= 0 or mean <= 0 or mean >= 1:
+    if std_dev <= 0 or mean <= 0 or mean >= 1 or std_dev ** 2 >= mean * (1 - mean):
         # A very large alpha+beta with the right ratio squeezes the Beta
         # distribution down to (almost) a single point at `mean`, without
         # the numerical problems of a literal zero-variance distribution.
