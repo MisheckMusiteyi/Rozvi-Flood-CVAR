@@ -6,28 +6,7 @@ The Streamlit demo for the Flood CVaR model.
 This app is deliberately narrow in scope: it only asks for the handful of
 inputs the calculation actually needs (see calc_engine/ for what each one
 feeds into), and it only shows the results. It exists to demonstrate the
-CALCULATION -- not to reproduce the full Rozvi platform experience. The
-dev team's job, once this is handed over, is to combine this calculation
-engine with the Rozvi risk-scoring model, inside the real Rozvi UI shown
-in the Figma file.
-
-STYLING NOTE
-------------
-Streamlit does not support arbitrary pixel-level layout the way the
-Figma file's React/Tailwind export does, so this is not a pixel-perfect
-reproduction. What IS applied directly from the real Rozvi design system
-(pulled from the Figma file's "Financial Impact : Climate VaR" screen,
-not guessed) is:
-
-    - Font: Plus Jakarta Sans, the same family used throughout Rozvi
-    - Colours: #1a1a1a (near-black, used for primary buttons and the
-      active-tab background), #f3f4f5 (page background), white cards
-      with a rgba(26,26,26,0.4) border and 8px corner radius
-    - The metric-card pattern: a muted label, a large bold value, and a
-      muted caption underneath -- exactly how Rozvi's own VaR/CVaR cards
-      are built
-    - "Run Climate Analysis" as the primary action button, black
-      background / white text, matching Rozvi's own button style
+CALCULATION, not to reproduce the full Rozvi platform experience
 
 Run this app with:
     streamlit run app.py
@@ -97,10 +76,10 @@ html, body, [class*="css"] {
     color: rgba(26,26,26,0.6);
 }
 
-/* Metric cards: white, bordered, rounded -- matching Rozvi's VaR/CVaR
+/* Metric cards: white, bordered, rounded, matching Rozvi's VaR/CVaR
    cards exactly (label, big bold value, muted caption). Streamlit's
    built-in st.metric doesn't expose enough hooks to restyle cleanly, so
-   the app builds these cards directly in HTML instead -- see
+   the app builds these cards directly in HTML instead, see
    render_metric_card() below. */
 .rozvi-card {
     background-color: white;
@@ -165,7 +144,7 @@ h2 {
 
 /* The rule above also catches the "Run Climate Analysis" button's own
    label text, since Streamlit renders button text through the same
-   markdown wrapper -- without this, the label turns near-black on a
+   markdown wrapper, without this, the label turns near-black on a
    near-black button background and disappears. This selector is more
    specific, so it wins and restores white text on the primary button. */
 div.stButton > button[kind="primary"] [data-testid="stMarkdownContainer"] p {
@@ -206,7 +185,7 @@ st.markdown(
 )
 
 st.caption(
-    "This screen demonstrates the CALCULATION only -- it is not the production UI. "
+    "This screen demonstrates the CALCULATION only, it is not the production UI. "
     "The dev team's job is to combine this calculation engine with the Rozvi "
     "risk-scoring model, inside the real Rozvi platform shown in the Figma file."
 )
@@ -221,7 +200,7 @@ st.header("Asset details")
 asset_name = st.text_input(
     "Asset Name",
     placeholder="e.g. Mvurwi Grain Silos",
-    help="For identifying this asset in the results only -- does not affect the calculation.",
+    help="For identifying this asset in the results only, does not affect the calculation.",
 )
 
 asset_class = st.selectbox("Asset Type", ASSET_CLASSES)
@@ -233,7 +212,7 @@ asset_has_split = asset_class not in CLASSES_WITHOUT_STRUCTURE_CONTENTS_SPLIT
 
 if asset_has_split:
     st.write(
-        "**Replacement Value** -- the current cost to rebuild the structure "
+        "**Replacement Value**, the current cost to rebuild the structure "
         "and replace the contents from a totally destroyed state, at "
         "today's prices. This is *not* book value, market value, or "
         "insured value."
@@ -244,13 +223,13 @@ if asset_has_split:
     st.caption(f"Total Replacement Value: ${structure_value + contents_value:,.2f}")
 else:
     st.write(
-        "**Replacement Value** -- the current cost to fully rebuild this "
+        "**Replacement Value**, the current cost to fully rebuild this "
         "asset, at today's prices. "
         f"{asset_class} has no Structure/Contents split, so a single "
         "value is used for the whole asset."
     )
     structure_value = st.number_input("Replacement Value ($)", min_value=0.0, step=1000.0, format="%.2f")
-    contents_value = 0.0  # not used for these asset classes -- see damage_curves.py
+    contents_value = 0.0  # not used for these asset classes, see damage_curves.py
 
 st.header("Risk score")
 
@@ -357,7 +336,7 @@ if run_clicked:
                 st.markdown(render_metric_card(label, f"${value:,.0f}", caption), unsafe_allow_html=True)
 
         st.write("")
-        st.subheader("Conditional Value at Risk (CVaR)")
+        st.subheader("Climate Value at Risk (CVaR)")
         cvar_col, _, _ = st.columns(3)
         with cvar_col:
             st.markdown(
@@ -376,7 +355,7 @@ if run_clicked:
 
         st.info(
             "These are gross decision-support estimates based on modelled "
-            "hazard and damage curves -- not insured-loss values or "
+            "hazard and damage curves, not insured-loss values or "
             "accounting forecasts.",
             icon="\u2139\ufe0f",
         )
