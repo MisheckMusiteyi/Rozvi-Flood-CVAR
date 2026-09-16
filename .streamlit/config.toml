@@ -1,0 +1,30 @@
+# .streamlit/config.toml
+#
+# Without this file, Streamlit falls back to its own default theme, which
+# follows the VIEWER'S device dark/light mode setting -- meaning input
+# boxes, labels, and help text can render as if on a dark background even
+# though the page itself (styled via custom CSS in app.py) is light. That
+# mismatch is exactly what caused the faint, half-legible text and dark
+# input boxes.
+#
+# Setting an explicit [theme] here overrides that per-device guessing, so
+# every viewer sees the same, correctly-contrasted light theme -- matching
+# the colours pulled from the Rozvi Figma file.
+
+[theme]
+base = "light"
+
+# Rozvi's near-black, used for primary buttons and active-tab backgrounds
+primaryColor = "#1a1a1a"
+
+# Main content area background, matching Rozvi's page background
+backgroundColor = "#f3f4f5"
+
+# Background for input widgets (text boxes, dropdowns, etc.) and the
+# sidebar -- matching Rozvi's white fields and cards
+secondaryBackgroundColor = "#ffffff"
+
+# Body text colour, matching Rozvi's near-black text
+textColor = "#1a1a1a"
+
+font = "sans serif"
