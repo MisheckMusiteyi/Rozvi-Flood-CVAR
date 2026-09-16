@@ -162,6 +162,15 @@ h2 {
 [data-testid="stCaptionContainer"] p {
     color: rgba(26,26,26,0.6) !important;
 }
+
+/* The rule above also catches the "Run Climate Analysis" button's own
+   label text, since Streamlit renders button text through the same
+   markdown wrapper -- without this, the label turns near-black on a
+   near-black button background and disappears. This selector is more
+   specific, so it wins and restores white text on the primary button. */
+div.stButton > button[kind="primary"] [data-testid="stMarkdownContainer"] p {
+    color: white !important;
+}
 </style>
 """
 st.markdown(ROZVI_CSS, unsafe_allow_html=True)
