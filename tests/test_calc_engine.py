@@ -35,17 +35,31 @@ def test_score_at_exact_band_midpoints_matches_the_original_assignment_table():
     assert depth == pytest.approx(0.0)
 
     probability, depth = score_to_probability_and_depth(9.5)
-    assert probability == pytest.approx(0.20)
+    assert probability == pytest.approx(0.04)
     assert depth == pytest.approx(2.4)
 
 
-def test_score_below_first_anchor_holds_flat_rather_than_extrapolating():
-    """A score of 1.00 is below the first anchor (1.5), it should be
-    held at the same value as the anchor, not extrapolated past it."""
-    probability_at_1_00, depth_at_1_00 = score_to_probability_and_depth(1.00)
-    probability_at_1_50, depth_at_1_50 = score_to_probability_and_depth(1.50)
-    assert probability_at_1_00 == pytest.approx(probability_at_1_50)
-    assert depth_at_1_00 == pytest.approx(depth_at_1_50)
+def test_score_beyond_anchor_range_extrapolates_the_nearest_slope():
+    """Scores below 1.5 or above 9.5 continue the nearest segment's trend
+    rather than holding flat -- otherwise the top half-point of the scale
+    (9.5 to 10.0) would return one identical value with zero
+    differentiation, which is exactly the problem this replaced."""
+    probability_at_9_50, depth_at_9_50 = score_to_probability_and_depth(9.50)
+    probability_at_10_00, depth_at_10_00 = score_to_probability_and_depth(10.00)
+    assert probability_at_10_00 > probability_at_9_50
+    assert depth_at_10_00 > depth_at_9_50
+
+    probability_at_1_00, _ = score_to_probability_and_depth(1.00)
+    probability_at_1_50, _ = score_to_probability_and_depth(1.50)
+    assert probability_at_1_00 < probability_at_1_50
+
+
+def test_depth_never_goes_negative_even_when_extrapolated():
+    """Extending the bottom segment's slope below score 1.5 would
+    otherwise produce a physically meaningless negative flood depth;
+    the floor should catch this."""
+    _, depth = score_to_probability_and_depth(1.00)
+    assert depth >= 0.0
 
 
 def test_score_outside_valid_range_is_rejected():
