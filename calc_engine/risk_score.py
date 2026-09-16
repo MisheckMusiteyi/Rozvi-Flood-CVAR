@@ -33,6 +33,16 @@ Below the first anchor (1.5) or above the last anchor (9.5), there is no
 "next" band to interpolate towards, so the value is simply held flat at
 whatever the nearest end anchor says. This matches exactly what was built
 and verified in the "Risk Score Continuous Assignment" reference workbook.
+
+HONESTY NOTE FOR WHOEVER READS THIS LATER
+-------------------------------------------
+These five anchor values are a starting judgement call (Method one), not
+something measured from real Zimbabwean flood data yet. Once real hazard
+data is available for a set of locations, Method two ("calibrated
+assignment") replaces these hardcoded numbers with values fitted from
+observed outcomes. Nothing else in this file needs to change when that
+happens, only the five numbers in ANCHOR_PROBABILITIES and
+ANCHOR_DEPTHS_M below.
 """
 
 import numpy as np
@@ -60,7 +70,7 @@ def score_to_probability_and_depth(risk_score: float) -> tuple[float, float]:
     risk_score:
         A number between 1.00 and 10.00 (inclusive), as produced by the
         Rozvi risk-scoring model. Decimals are expected and supported
-        (e.g. 3.45, 6.72) -- this is exactly why the anchor-and-interpolate
+        (e.g. 3.45, 6.72), this is exactly why the anchor-and-interpolate
         approach is used instead of a five-row lookup table.
 
     Returns
@@ -89,7 +99,7 @@ def score_to_probability_and_depth(risk_score: float) -> tuple[float, float]:
     # for a risk_score that falls between two anchor points, it draws a
     # straight line between them and reads off the in-between value. For a
     # risk_score below the smallest anchor or above the largest one, it
-    # automatically "holds flat" at the nearest end value -- which is
+    # automatically "holds flat" at the nearest end value, which is
     # exactly the behaviour we want, so no extra edge-case code is needed.
     probability = float(np.interp(risk_score, ANCHOR_SCORES, ANCHOR_PROBABILITIES))
     depth_m = float(np.interp(risk_score, ANCHOR_SCORES, ANCHOR_DEPTHS_M))
