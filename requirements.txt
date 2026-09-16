@@ -3,17 +3,3 @@ numpy>=1.26
 scipy>=1.11
 pandas>=2.2
 pytest>=8.0
-
-"""
-conftest.py
-
-Pytest automatically loads this file before running any tests. Its only
-job here is to make sure the repository's root folder is on Python's
-import path, so that `from calc_engine.risk_score import ...` works from
-tests/test_calc_engine.py regardless of which folder pytest is run from.
-"""
-
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
