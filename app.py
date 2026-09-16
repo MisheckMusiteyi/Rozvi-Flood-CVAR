@@ -6,7 +6,11 @@ The Streamlit demo for the Flood CVaR model.
 This app is deliberately narrow in scope: it only asks for the handful of
 inputs the calculation actually needs (see calc_engine/ for what each one
 feeds into), and it only shows the results. It exists to demonstrate the
-CALCULATION, not to reproduce the full Rozvi platform experience
+CALCULATION -- not to reproduce the full Rozvi platform experience. The
+dev team's job, once this is handed over, is to combine this calculation
+engine with the Rozvi risk-scoring model, inside the real Rozvi UI shown
+in the Figma file. Until then, the Risk Score below is entered manually,
+standing in for whatever number the Rozvi model will eventually supply.
 
 Run this app with:
     streamlit run app.py
@@ -27,167 +31,13 @@ from calc_engine.simulation import run_flood_loss_simulation
 # Page setup
 # --------------------------------------------------------------------------
 
-st.set_page_config(page_title="Flood CVaR Model", page_icon="\U0001F30A", layout="wide")
+st.set_page_config(page_title="Flood CVaR Model", page_icon="\U0001F30A", layout="centered")
 
-# ---- Rozvi design tokens, applied as custom CSS -------------------------
-# These colours, the font, and the card/button shapes are taken directly
-# from the Rozvi Figma file (Financial Impact : Climate VaR screen), not
-# invented for this app.
-ROZVI_CSS = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-/* Page background, matching Rozvi's #f3f4f5 */
-.stApp {
-    background-color: #f3f4f5;
-}
-
-/* Rozvi's brand mark: a small black square + wordmark, top of the sidebar
-   in the real product. Reproduced here at the top of the page instead,
-   since this demo has no sidebar navigation. */
-.rozvi-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 24px;
-}
-.rozvi-brand .mark {
-    width: 40px;
-    height: 40px;
-    background-color: #1a1a1a;
-    border-radius: 4px;
-}
-.rozvi-brand .wordmark p {
-    margin: 0;
-    line-height: 1.2;
-}
-.rozvi-brand .wordmark .name {
-    font-weight: 600;
-    font-size: 18px;
-    color: #1a1a1a;
-}
-.rozvi-brand .wordmark .tagline {
-    font-weight: 600;
-    font-size: 11px;
-    color: rgba(26,26,26,0.6);
-}
-
-/* Metric cards: white, bordered, rounded, matching Rozvi's VaR/CVaR
-   cards exactly (label, big bold value, muted caption). Streamlit's
-   built-in st.metric doesn't expose enough hooks to restyle cleanly, so
-   the app builds these cards directly in HTML instead, see
-   render_metric_card() below. */
-.rozvi-card {
-    background-color: white;
-    border: 1px solid rgba(26,26,26,0.4);
-    border-radius: 8px;
-    padding: 24px;
-    height: 100%;
-}
-.rozvi-card .label {
-    font-weight: 600;
-    font-size: 16px;
-    color: rgba(26,26,26,0.6);
-    margin-bottom: 12px;
-}
-.rozvi-card .value {
-    font-weight: 700;
-    font-size: 28px;
-    color: #1a1a1a;
-    margin-bottom: 8px;
-}
-.rozvi-card .caption {
-    font-weight: 500;
-    font-size: 13px;
-    color: rgba(26,26,26,0.6);
-}
-
-/* Primary button ("Run Climate Analysis"): black background, white text,
-   matching Rozvi's own primary button and active-tab styling. */
-div.stButton > button[kind="primary"] {
-    background-color: #1a1a1a;
-    color: white;
-    border: 1px solid #1a1a1a;
-    border-radius: 8px;
-    font-weight: 600;
-    padding: 12px 24px;
-}
-div.stButton > button[kind="primary"]:hover {
-    background-color: #333333;
-    border-color: #333333;
-    color: white;
-}
-
-/* Section headers, matching Rozvi's H3 (Bold, 20px) */
-h2 {
-    font-weight: 700 !important;
-    font-size: 20px !important;
-    color: #1a1a1a !important;
-}
-
-/* Belt-and-braces: explicitly colour widget labels, help text, and
-   captions, on top of the config.toml theme fix above. Streamlit's
-   internal class names shift between versions, so this targets the
-   data-testid hooks, which are the more stable ones. */
-[data-testid="stWidgetLabel"] p,
-[data-testid="stCaptionContainer"] p,
-[data-testid="stMarkdownContainer"] p {
-    color: #1a1a1a !important;
-}
-[data-testid="stCaptionContainer"] p {
-    color: rgba(26,26,26,0.6) !important;
-}
-
-/* The rule above also catches the "Run Climate Analysis" button's own
-   label text, since Streamlit renders button text through the same
-   markdown wrapper, without this, the label turns near-black on a
-   near-black button background and disappears. This selector is more
-   specific, so it wins and restores white text on the primary button. */
-div.stButton > button[kind="primary"] [data-testid="stMarkdownContainer"] p {
-    color: white !important;
-}
-</style>
-"""
-st.markdown(ROZVI_CSS, unsafe_allow_html=True)
-
-
-def render_metric_card(label: str, value: str, caption: str) -> str:
-    """
-    Build one Rozvi-style metric card (label / big value / caption) as raw
-    HTML. This mirrors the exact structure of the VaR/CVaR cards in the
-    Rozvi Figma file, which st.metric cannot reproduce closely enough on
-    its own.
-    """
-    return (
-        f'<div class="rozvi-card">'
-        f'<div class="label">{label}</div>'
-        f'<div class="value">{value}</div>'
-        f'<div class="caption">{caption}</div>'
-        f'</div>'
-    )
-
-
-st.markdown(
-    """
-    <div class="rozvi-brand">
-        <div class="mark"></div>
-        <div class="wordmark">
-            <p class="name">Flood CVaR Model</p>
-            <p class="tagline">Demo calculation engine, styled to match Rozvi Climate Intelligence</p>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
+st.title("Flood CVaR Model")
 st.caption(
-    "This screen demonstrates the CALCULATION only, it is not the production UI. "
-    "The dev team's job is to combine this calculation engine with the Rozvi "
-    "risk-scoring model, inside the real Rozvi platform shown in the Figma file."
+    "A demo calculation engine for flood-related financial loss, built to "
+    "plug into the Rozvi risk-scoring platform. This screen shows the "
+    "calculation only -- the production UI will follow the Rozvi Figma design."
 )
 
 
@@ -200,7 +50,7 @@ st.header("Asset details")
 asset_name = st.text_input(
     "Asset Name",
     placeholder="e.g. Mvurwi Grain Silos",
-    help="For identifying this asset in the results only, does not affect the calculation.",
+    help="For identifying this asset in the results only -- does not affect the calculation.",
 )
 
 asset_class = st.selectbox("Asset Type", ASSET_CLASSES)
@@ -212,24 +62,23 @@ asset_has_split = asset_class not in CLASSES_WITHOUT_STRUCTURE_CONTENTS_SPLIT
 
 if asset_has_split:
     st.write(
-        "**Replacement Value**, the current cost to rebuild the structure "
+        "**Replacement Value** -- the current cost to rebuild the structure "
         "and replace the contents from a totally destroyed state, at "
         "today's prices. This is *not* book value, market value, or "
         "insured value."
     )
-    input_col1, input_col2 = st.columns(2)
-    structure_value = input_col1.number_input("Structure Value ($)", min_value=0.0, step=1000.0, format="%.2f")
-    contents_value = input_col2.number_input("Contents Value ($)", min_value=0.0, step=1000.0, format="%.2f")
+    structure_value = st.number_input("Structure Value ($)", min_value=0.0, step=1000.0, format="%.2f")
+    contents_value = st.number_input("Contents Value ($)", min_value=0.0, step=1000.0, format="%.2f")
     st.caption(f"Total Replacement Value: ${structure_value + contents_value:,.2f}")
 else:
     st.write(
-        "**Replacement Value**, the current cost to fully rebuild this "
+        "**Replacement Value** -- the current cost to fully rebuild this "
         "asset, at today's prices. "
         f"{asset_class} has no Structure/Contents split, so a single "
         "value is used for the whole asset."
     )
     structure_value = st.number_input("Replacement Value ($)", min_value=0.0, step=1000.0, format="%.2f")
-    contents_value = 0.0  # not used for these asset classes, see damage_curves.py
+    contents_value = 0.0  # not used for these asset classes -- see damage_curves.py
 
 st.header("Risk score")
 
@@ -267,7 +116,16 @@ if run_clicked:
 
         # Step 2: look up how much damage a flood of that depth causes,
         # for this asset's class.
-        damage_estimate = get_damage_estimate(asset_class, flood_depth_m)
+        #
+        # material_factor is a vulnerability adjustment (construction
+        # quality/strength), not a hazard input -- it only shifts which
+        # point on the damage curve gets read inside get_damage_estimate.
+        # flood_depth_m itself (the real, physical hazard depth from
+        # risk_score.py) is passed through unchanged, and is exactly what
+        # gets shown below in "How this was calculated". Hardcoded to 1.3
+        # for this demo; in production this would vary by asset/material.
+        material_factor = 1.3
+        damage_estimate = get_damage_estimate(asset_class, flood_depth_m, material_factor=material_factor)
 
         # Step 3: run the full simulation to get the loss distribution and
         # every risk figure read off it.
@@ -303,48 +161,21 @@ if run_clicked:
                     f"std dev **{damage_estimate.overall_std:.1%}**"
                 )
 
-        # Top row: Mean and Median, matching the "Mean Climate VaR" card
-        # style from the Rozvi Figma file.
-        top_col1, top_col2 = st.columns(2)
-        with top_col1:
-            st.markdown(
-                render_metric_card("Mean Climate VaR", f"${result.mean_annual_loss:,.0f}", "Expected annual loss"),
-                unsafe_allow_html=True,
-            )
-        with top_col2:
-            st.markdown(
-                render_metric_card("Median Loss", f"${result.median_loss:,.0f}", "50th percentile outcome"),
-                unsafe_allow_html=True,
-            )
+        col1, col2 = st.columns(2)
+        col1.metric("Expected Annual Loss (mean)", f"${result.mean_annual_loss:,.0f}")
+        col2.metric("Median Loss (P50)", f"${result.median_loss:,.0f}")
 
-        st.write("")  # small spacer
         st.subheader("Value at Risk (VaR)")
-
-        # Five VaR cards in a row, matching the five-card layout on the
-        # Rozvi Financial Impact screen exactly (VaR90 / VaR95 / VaR99 /
-        # VaR99.5 / VaR99.8).
-        var_labels_values_captions = [
-            ("VaR 90", result.var_90, "10% exceedance"),
-            ("VaR 95", result.var_95, "5% exceedance"),
-            ("VaR 99", result.var_99, "1% exceedance"),
-            ("VaR 99.5", result.var_99_5, "0.5% exceedance"),
-            ("VaR 99.8", result.var_99_8, "0.2% exceedance"),
-        ]
         var_cols = st.columns(5)
-        for col, (label, value, caption) in zip(var_cols, var_labels_values_captions):
-            with col:
-                st.markdown(render_metric_card(label, f"${value:,.0f}", caption), unsafe_allow_html=True)
+        var_cols[0].metric("VaR 90", f"${result.var_90:,.0f}")
+        var_cols[1].metric("VaR 95", f"${result.var_95:,.0f}")
+        var_cols[2].metric("VaR 99", f"${result.var_99:,.0f}")
+        var_cols[3].metric("VaR 99.5", f"${result.var_99_5:,.0f}")
+        var_cols[4].metric("VaR 99.8", f"${result.var_99_8:,.0f}")
 
-        st.write("")
-        st.subheader("Climate Value at Risk (CVaR)")
-        cvar_col, _, _ = st.columns(3)
-        with cvar_col:
-            st.markdown(
-                render_metric_card("CVaR 95", f"${result.cvar_95:,.0f}", "Average loss in the worst 5% of outcomes"),
-                unsafe_allow_html=True,
-            )
+        st.subheader("Conditional Value at Risk (CVaR)")
+        st.metric("CVaR 95", f"${result.cvar_95:,.0f}")
 
-        st.write("")
         st.subheader("Simulated loss distribution")
         st.caption(
             "Histogram of all 10,000 simulated years. Most years show zero "
@@ -355,7 +186,7 @@ if run_clicked:
 
         st.info(
             "These are gross decision-support estimates based on modelled "
-            "hazard and damage curves, not insured-loss values or "
+            "hazard and damage curves -- not insured-loss values or "
             "accounting forecasts.",
             icon="\u2139\ufe0f",
         )
