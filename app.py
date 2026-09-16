@@ -149,6 +149,19 @@ h2 {
     font-size: 20px !important;
     color: #1a1a1a !important;
 }
+
+/* Belt-and-braces: explicitly colour widget labels, help text, and
+   captions, on top of the config.toml theme fix above. Streamlit's
+   internal class names shift between versions, so this targets the
+   data-testid hooks, which are the more stable ones. */
+[data-testid="stWidgetLabel"] p,
+[data-testid="stCaptionContainer"] p,
+[data-testid="stMarkdownContainer"] p {
+    color: #1a1a1a !important;
+}
+[data-testid="stCaptionContainer"] p {
+    color: rgba(26,26,26,0.6) !important;
+}
 </style>
 """
 st.markdown(ROZVI_CSS, unsafe_allow_html=True)
