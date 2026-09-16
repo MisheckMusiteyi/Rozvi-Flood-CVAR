@@ -17,8 +17,10 @@ For one asset, we now have:
 A single, one-shot calculation would just multiply these together and stop
 -- but that only ever gives you ONE number: the *average* expected loss.
 It can't tell you anything about how bad a genuinely bad year could be,
-which is exactly what a Value-at-Risk (VaR) or Conditional Value-at-Risk
-(CVaR) figure is for.
+which is exactly what a Value at Risk (VaR) or Climate Value at Risk
+(CVaR) figure is for -- Rozvi's own name for what risk literature more
+generally calls Conditional VaR or Expected Shortfall: the average loss
+in the worst slice of outcomes, not just the threshold itself.
 
 To get those, we simulate many thousands of possible years. In each
 simulated year:
@@ -234,7 +236,7 @@ def run_flood_loss_simulation(
     def value_at_risk(confidence_level_pct: float) -> float:
         return float(np.percentile(simulated_losses, confidence_level_pct))
 
-    def conditional_value_at_risk(confidence_level_pct: float) -> float:
+    def climate_value_at_risk(confidence_level_pct: float) -> float:
         threshold = value_at_risk(confidence_level_pct)
         tail_losses = simulated_losses[simulated_losses >= threshold]
         # Guard against an empty tail (possible if the confidence level is
@@ -250,6 +252,6 @@ def run_flood_loss_simulation(
         var_99=value_at_risk(99),
         var_99_5=value_at_risk(99.5),
         var_99_8=value_at_risk(99.8),
-        cvar_95=conditional_value_at_risk(95),
+        cvar_95=climate_value_at_risk(95),
         simulated_losses=simulated_losses,
     )
