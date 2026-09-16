@@ -1,0 +1,103 @@
+# Flood CVaR Model
+
+A calculation engine and Streamlit demo for estimating flood-related
+financial loss on an asset, expressed as an Average Annual Loss (AAL) and
+a Value-at-Risk / Conditional Value-at-Risk (VaR/CVaR) profile.
+
+This is one half of a two-model system. The other half -- the **Rozvi**
+risk-scoring model -- turns an asset's location, elevation, slope, and
+rainfall into a single **Risk Score** (1.00 to 10.00). This repository
+takes that Risk Score as an input and turns it into an actual financial
+loss figure. For this demo, the Risk Score is entered manually; in
+production, it will be supplied automatically by the Rozvi model.
+
+## Quick start
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+To run the test suite:
+
+```bash
+pytest -v
+```
+
+## How the calculation works, step by step
+
+1. **Risk Score -> probability and depth** (`calc_engine/risk_score.py`)
+   The Risk Score is converted into an annual flood probability and an
+   expected flood depth, using five judgement-based anchor points,
+   piecewise-linearly interpolated so that any decimal score (e.g. 6.72)
+   gets its own sensible value rather than falling into one of five
+   buckets.
+
+2. **Depth -> damage percentage** (`calc_engine/damage_curves.py`)
+   The flood depth is looked up against `data/full_curve.csv`, which
+   gives the mean damage percentage (and its uncertainty) for the
+   asset's class, split into Structure and Contents where that split
+   applies.
+
+3. **Simulation -> AAL, VaR, CVaR** (`calc_engine/simulation.py`)
+   Rather than a single-point calculation, 10,000 possible years are
+   simulated: each year, a flood either happens or doesn't (weighted by
+   the annual probability), and if it does, the damage percentage is
+   drawn from a distribution around the mean (not assumed to be exactly
+   the mean every time). The resulting 10,000 simulated losses are used
+   to read off the Average Annual Loss, the VaR ladder, and CVaR95.
+
+## Where the data comes from
+
+`data/full_curve.csv` is built from:
+
+- **JRC** (EU Joint Research Centre) Global Flood Depth-Damage Functions
+  -- the primary source, used directly for Residential and Industrial
+  buildings, which have genuine African data.
+- **Interpolated JRC values** for Commercial buildings, Transport, and
+  Infrastructure (roads), which have no African data in JRC at all. Their
+  values are estimated using the African/worldwide relationship observed
+  in Industrial buildings (the closest comparable class with both).
+- **Hazus** (FEMA, US) -- used only to derive the *shape* of the
+  Structure/Contents split, since neither JRC nor Hazus publish that
+  split as a directly transferable percentage; the shape is rescaled to
+  match JRC's own total for each class.
+
+**None of this is locally calibrated yet.** Every figure in this model is
+a defensible, documented estimate built from international data sources
+-- not something measured against real Zimbabwean flood claims or
+Zimbabwean construction costs. That calibration step (comparing model
+output against Insurance Council of Zimbabwe / IPEC claims data) is a
+known, deliberate gap, not an oversight.
+
+## Known limitations, deferred to a future version
+
+- **Replacement Value is entered as a single declared figure.** There is
+  no depreciation logic (converting a current/depreciated asset value
+  into a full-rebuild-cost figure) built into this version.
+- **The Risk Score's probability/depth assignment is judgement-based**
+  (five hand-picked anchor points), not yet calibrated against observed
+  hazard data for real locations.
+- **Agriculture is out of scope.** Unlike the five classes here,
+  agricultural damage depends on the timing and duration of flooding
+  during the growing season, not just depth -- it needs a different kind
+  of model entirely, not just another row in this same curve.
+- **No connection yet to regulatory capital reporting** (e.g. ZICARP).
+  This model's loss figures are on a replacement-cost basis, consistent
+  with the JRC/Hazus damage curves; a regulatory solvency calculation
+  would need those figures translated onto an economic/fair-value basis
+  first, which is a separate piece of work.
+
+## Repository layout
+
+```
+app.py                       Streamlit UI
+calc_engine/
+    risk_score.py             Risk Score -> (probability, depth)
+    damage_curves.py          asset class + depth -> damage % and its spread
+    simulation.py             Monte Carlo simulation -> AAL, VaR, CVaR
+data/
+    full_curve.csv            damage curve data (see "Where the data comes from")
+tests/
+    test_calc_engine.py       sanity checks for every module above
+```
