@@ -14,11 +14,11 @@ For one asset, we now have:
     - the asset's REPLACEMENT VALUE (Structure and Contents,  (user input)
       or a single value for Transport/roads)
 
-A single, one-shot calculation would just multiply these together and stop
--- but that only ever gives you ONE number: the *average* expected loss.
+A single, one-shot calculation would just multiply these together and stop,
+but that only ever gives you ONE number: the *average* expected loss.
 It can't tell you anything about how bad a genuinely bad year could be,
 which is exactly what a Value at Risk (VaR) or Climate Value at Risk
-(CVaR) figure is for -- Rozvi's own name for what risk literature more
+(CVaR) figure is for, Rozvi's own name for what risk literature more
 generally calls Conditional VaR or Expected Shortfall: the average loss
 in the worst slice of outcomes, not just the threshold itself.
 
@@ -28,7 +28,7 @@ simulated year:
     1. We flip a weighted coin: does a flood happen this year at all,
        given the annual probability we were handed?
     2. If yes, we don't assume the damage is always exactly the mean
-       percentage -- real floods vary. So we draw a damage percentage
+       percentage, real floods vary. So we draw a damage percentage
        from a distribution centred on that mean, with the right amount
        of spread (its standard deviation).
     3. We turn that damage percentage into an actual dollar loss for that
@@ -36,14 +36,14 @@ simulated year:
 
 Doing this 10,000 times gives us 10,000 simulated possible outcomes for
 the year. Most of them will be $0 (no flood). The non-zero ones describe
-the shape of "what a bad year could look like" -- and that's exactly what
+the shape of "what a bad year could look like", and that's exactly what
 lets us read off proper VaR and CVaR figures at the end, instead of just
 one average number.
 
 WHY A BETA DISTRIBUTION, SPECIFICALLY
 ----------------------------------------
 A damage percentage can never be below 0% or above 100%. A plain "bell
-curve" (normal distribution) doesn't respect that -- it could technically
+curve" (normal distribution) doesn't respect that, it could technically
 suggest a damage percentage of -5% or 110%, which makes no sense. The Beta
 distribution is built specifically for values that must stay between 0
 and 1, which is exactly what a damage fraction is. It's also the standard
@@ -60,7 +60,7 @@ from calc_engine.damage_curves import DamageEstimate
 
 # How many possible years to simulate. 10,000 is the standard choice used
 # throughout this project (and in the drought VaR methodology it borrows
-# from) -- enough draws that the tail percentiles (95th, 99th, 99.8th) are
+# from), enough draws that the tail percentiles (95th, 99th, 99.8th) are
 # reasonably stable, without being so many that the app feels slow.
 DEFAULT_NUMBER_OF_SIMULATED_YEARS = 10_000
 
@@ -71,11 +71,11 @@ class LossSimulationResult:
     The full set of risk figures produced by one simulation run, matching
     the metrics the Rozvi platform's own results screens already show
     (see the "Financial Impact : Climate VaR" screens in the Rozvi Figma
-    file) -- so this output can be dropped straight into that UI without
+    file), so this output can be dropped straight into that UI without
     the dev team needing to ask for additional figures later.
     """
     mean_annual_loss: float   # the "Expected/Average Annual Loss" headline number
-    median_loss: float        # the 50th percentile outcome -- often $0, see note below
+    median_loss: float        # the 50th percentile outcome, often $0, see note below
     var_90: float
     var_95: float
     var_99: float
@@ -90,13 +90,13 @@ def _fit_beta_distribution(mean: float, std_dev: float) -> tuple[float, float]:
     Work out the two shape parameters (alpha, beta) of a Beta distribution
     that has the given mean and standard deviation.
 
-    This uses the "method of moments" -- a standard, simple way to fit a
+    This uses the "method of moments", a standard, simple way to fit a
     distribution: rather than guessing and checking, there is a direct
     algebraic formula that gives you the alpha/beta which reproduce
     exactly the mean and standard deviation you started with.
 
     Edge cases: if the mean is exactly 0 or exactly 1, or the standard
-    deviation is 0, there is no meaningful "spread" to model -- the
+    deviation is 0, there is no meaningful "spread" to model, the
     outcome is certain. In that case we return parameters that make the
     distribution behave as a fixed point at that mean, rather than letting
     the formula divide by zero.
@@ -104,8 +104,8 @@ def _fit_beta_distribution(mean: float, std_dev: float) -> tuple[float, float]:
     A Beta distribution with a given mean can only support variances up
     to mean * (1 - mean) (its variance approaches that ceiling as the
     distribution becomes U-shaped/degenerate). Some rows in the damage
-    curve data report a standard deviation that -- combined with a mean
-    very close to 0 or 1 -- exceeds that ceiling (e.g. a mean of 0.995
+    curve data report a standard deviation that, combined with a mean
+    very close to 0 or 1, exceeds that ceiling (e.g. a mean of 0.995
     with a std of 0.156). That combination isn't a valid Beta shape at
     all: the method-of-moments formula below would produce a negative
     alpha/beta, which scipy rejects outright. We treat that case the same
@@ -114,12 +114,12 @@ def _fit_beta_distribution(mean: float, std_dev: float) -> tuple[float, float]:
 
     A further wrinkle: scipy requires BOTH alpha and beta to be strictly
     positive, not just non-negative. A mean of exactly 0 or exactly 1
-    (which genuinely occurs in this data -- e.g. 0% damage at 0m depth,
+    (which genuinely occurs in this data, e.g. 0% damage at 0m depth,
     or 100% damage at the deepest floods for some asset classes) would
     otherwise make one of the two shape parameters exactly 0.0, which
     scipy rejects with the same error. The damage curve data also has one
     row (Transport at 5m depth) where the mean is a fraction of a percent
-    over 1.0 -- a data quirk, not a real >100% damage figure -- which
+    over 1.0, a data quirk, not a real >100% damage figure, which
     would make beta go negative. We guard against all of these the same
     way: clip the mean into a narrow-but-open (0, 1) interval before
     computing alpha/beta in the "certain outcome" branch, so the
@@ -171,7 +171,7 @@ def run_flood_loss_simulation(
         The asset's Replacement Value, split into Structure and Contents.
         For Transport and Infrastructure (roads), which have no
         Structure/Contents split, pass the asset's single Replacement
-        Value as `structure_value` and 0 as `contents_value` -- the
+        Value as `structure_value` and 0 as `contents_value`, the
         damage_estimate for those classes only has an "overall" figure
         anyway, so the split doesn't matter for the maths, but keeping
         the whole value in one bucket avoids silently losing half of it.
@@ -194,7 +194,7 @@ def run_flood_loss_simulation(
 
     # Step 1: decide, for every simulated year at once, whether a flood
     # happens that year. This is a single vectorised "coin flip" rather
-    # than a loop -- draw one uniform random number per simulated year,
+    # than a loop, draw one uniform random number per simulated year,
     # and a flood "happens" in that year if the draw falls below the
     # annual probability.
     uniform_draws = random_generator.random(number_of_simulated_years)
@@ -202,7 +202,7 @@ def run_flood_loss_simulation(
 
     # Step 2: for every simulated year, draw a damage percentage. We draw
     # for ALL years (not just the ones where a flood happens) because it's
-    # simpler and faster to do this as one vectorised operation -- the
+    # simpler and faster to do this as one vectorised operation, the
     # damage percentage for a no-flood year is simply discarded below.
     has_structure_contents_split = damage_estimate.structure_mean is not None
 
